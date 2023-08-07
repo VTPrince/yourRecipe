@@ -6,21 +6,26 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const jwtSecretKey = process.env.JWT_SECRET_KEY;
+const cors = require('cors');
 
 const app=express()
 
 // PostgreSQL database connection configuration
 const pool = new Pool({
-    connectionString: DATABASE_URL,
-    ssl: { rejectUnauthorized: false }, // Required if using SSL (ElephantSQL)
+    connectionString: 'postgres://yfspobum:nvHvuSTH08YaLH6pMUhL6KXi9flf_KL6@john.db.elephantsql.com/yfspobum'
+    // ssl: { rejectUnauthorized: false }, // Required if using SSL (ElephantSQL)
   });
   
   // Middleware to parse JSON bodies
 app.use(express.json());
-
+app.use(cors());
+app.options('*', cors({
+    allowedHeaders: ["Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization","Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT","Access-Control-Allow-Origin", "*"]
+  }));
 
 function generateToken(user) {
-    const token = jwt.sign({ id: user.uuid }, jwtSecretKey, { expiresIn: '1h' });
+    // console.log(user.rows[0].uuid)
+    const token = jwt.sign({ id: user.rows[0].uuid }, jwtSecretKey, { expiresIn: '1h' });
     return token;
   }
 
@@ -44,7 +49,9 @@ app.post('/app/register',(req,res)=>{
                 console.log(err)
                 return
             }
-            console.log(result);
+            // console.log(result);
+            res.json({message:'user created'})
+            return
           });
 
     });
@@ -74,6 +81,7 @@ app.post('/app/login',(req,res)=>{
                 return res.status(401).json({error:'Incorrect password'});
             }
             const token=generateToken(result)
+            // console.log(result.uuid)
             res.json({token})
         })
     })
@@ -81,12 +89,28 @@ app.post('/app/login',(req,res)=>{
 })
 
 
+app.get('/test', async (req, res) => {
+    try {
+      // Perform a test query to the database
+      const query = {
+        text: 'SELECT * FROM users LIMIT 1', // Replace "users" with your actual table name
+      };
+      const result = await pool.query(query);
+  
+      // Return the result as a JSON response
+      res.json(result.rows);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
+
 app.get('/', (req, res) => {
     res.send('Hello NEW World!')
   })
 
 
-const port = 3000
+const port = 7000
 app.listen(port,()=>{
-    console.log('Server is running on port 3000');
+    console.log('Server is running on port 7000');
 });
