@@ -22,6 +22,7 @@
     "pg": "^8.11.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-paginate": "^8.2.0",
     "remix-auth": "^3.5.0",
     "uuidv4": "^6.2.13"
   },
