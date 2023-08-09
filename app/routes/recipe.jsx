@@ -1,16 +1,24 @@
 import { Link } from '@remix-run/react';
 import React,{useState,useEffect} from 'react'
+import ReactPaginate from 'react-paginate';
+import stylesUrl from "~/styles/recipestyle.css";
+
+export const links = () => [
+  { rel: "stylesheet", href: stylesUrl },
+];
 
 export default function Recipe(){
     const[query,setQuery]=useState('')
-     const [loading, setLoading] = useState(false);
-     console.log(loading)
+    const [loading, setLoading] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(5);
+    // console.log(loading)
     // const[name,setName]=useState([])
     // const[imag,setImag]=useState([])
     const[detail,setDetail]=useState([])
     const handleSubmit=async(e)=>{
         e.preventDefault();
-        console.log(query);
+        // console.log(query);
         try{
             const response= await fetch(`https://api.edamam.com/api/recipes/v2?type=public&q=${query}&app_id=d871d5da&app_key=8c9d46e4e1e0f4e50c4ab9105fb6beee`,{
                 method:'GET'
@@ -23,53 +31,47 @@ export default function Recipe(){
             // const recipes=[]
             // const imgrecipes=[]
             // const det=[]
-            const det = await Promise.all(data.hits.map(async (hit) => {
-                return [hit.recipe.label, hit.recipe.image, hit.recipe.url, hit.recipe.mealType[0][0]];
-              }));
+            // const det = await Promise.all(data.hits.map(async (hit) => {
+            //     return [hit.recipe.label, hit.recipe.image, hit.recipe.url, hit.recipe.mealType[0][0]];
+            //   }));
 
-            data.hits.forEach((hit) => {
-                det.push([hit.recipe.label,hit.recipe.image,hit.recipe.url,hit.recipe.mealType[0][0]]);
-              });
-            setDetail(det);
+            // data.hits.forEach((hit) => {
+            //     // det.push([hit.recipe.label,hit.recipe.image,hit.recipe.url,hit.recipe.mealType[0][0]]);
+            //     det.push([hit.recipe.label])
+            //     console.log("going in")
+            //   });
+            const labels = data.hits.map(hit => [hit.recipe.label,hit.recipe.url,hit.recipe.image]);
+            setDetail(labels);
+            
+            // setDetail(det);
+            
+            // console.log(detail)
             setLoading(false);
             setLoading(true); // Set loading to true before the setTimeout
       setTimeout(() => {
         setLoading(false); // Set loading to false after a small delay
       }, 2000); 
-            // setLoading(false);
-            // console.log(loading);
-            // console.log(detail)
 
 
-            // data.hits.forEach((hit) => {
-            //     recipes.push(hit.recipe.label);
-            //   });
-            //   setName(recipes);
-            // console.log(recipes);
-
-            // data.hits.forEach((hit) => {
-            //     imgrecipes.push(hit.recipe.image);
-            //   });
-            //   setImag(imgrecipes);
-            //   console.log(imgrecipes);
         }
         catch(error){
             console.log(error);
             setLoading(false);
         }
     }
-    
-    // useEffect(() => {
-    //     console.log(name); // This will log the updated name state whenever it changes.
-    //   }, [name]);
+    useEffect(() => {
+        console.log('Detail array updated:', detail);
+      }, [detail]);
+    const totalItems = detail.length;   
+    // console.log(detail)
+    // console.log(detail.length)
+    const maxPage = Math.ceil(totalItems / itemsPerPage);
+  
+    const handlePageClick = (data) => {
+      const selectedPage = data.selected + 1; // react-paginate uses 0-based indexing
+      setCurrentPage(selectedPage);
+    };
 
-    // const handleClick=async(e)=>{
-    //     return(            <div><p>hello</p>
-    //         {(loading)?<div>Loading</div>:detail.map((recipe, index) => (
-    //             <li key={index}><Link to={recipe[2]}>{index + 1}. {recipe[0]}</Link><img src={recipe[1]} alt="" /></li>
-    //         ))}
-    //         </div>)
-    // }
 
     return(
         <div>
@@ -89,28 +91,48 @@ export default function Recipe(){
                 />
                 <button>Submit</button>
             </form>
-            <div>
-        {loading ? <div>Loading...</div> : (
+
+                {/* Displaying paginated data */}
+      <div>
+        {loading ? (
+          <div>Loading...</div>
+        ) : (
           <div>
             {detail.length > 0 ? (
               <ul>
-                {detail.map((recipe, index) => (
-                  <li key={index}>
-                    {/* <Link to={recipe[2]}>{index + 1}. {recipe[0]}</Link> */}
-                    <Link to={`/recipedetail?name=${encodeURIComponent(recipe[0])}&imag=${recipe[2]}`}>{recipe[0]}</Link>
-                    <img src={recipe[1]} alt="" />
-                  </li>
-                ))}
+                {detail
+                  .slice(
+                    (currentPage - 1) * itemsPerPage,
+                    currentPage * itemsPerPage
+                  )
+                  .map((recipe, index) => (
+                    <li key={index}>
+                      <Link to={`/recipedetail?name=${encodeURIComponent( recipe[1])}}`}>{recipe[0]}
+                      </Link>
+                      <img src={recipe[2]} alt="" />
+                    </li>
+                  ))}
               </ul>
             ) : null}
           </div>
         )}
       </div>
-            {/* <div>
-            {(loading)?<div>Loading</div>:detail.map((recipe, index) => (
-                <li key={index}><Link to={recipe[2]}>{index + 1}. {recipe[0]}</Link><img src={recipe[1]} alt="" /></li>
-            ))}
-            </div> */}
-        </div>
-    )
+
+      {/* Adding pagination component */}
+      <div className="pagination-container">
+        {maxPage > 1 && (
+          <ReactPaginate
+            pageCount={maxPage}
+            pageRangeDisplayed={5}
+            marginPagesDisplayed={2}
+            onPageChange={handlePageClick}
+            containerClassName={'pagination'}
+            activeClassName={'active'}
+          />
+          )}
+      </div>
+      
+    </div>
+  );
+
 }
