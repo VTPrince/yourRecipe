@@ -31,6 +31,7 @@ function generateToken(user) {
 
 
 
+
 app.post('/app/register',(req,res)=>{
     const{username,password}=req.body;
     const uuid=uuidv4();
@@ -88,14 +89,19 @@ app.post('/app/login',(req,res)=>{
 
 })
 
-
+// how to send page and size through url
+// http://localhost:7000/test?page=1&size=2
 app.get('/test', async (req, res) => {
     try {
       // Perform a test query to the database
+      const { page, size } = req.query;
+      console.log(page, size);
       const query = {
-        text: 'SELECT * FROM users LIMIT 1', // Replace "users" with your actual table name
+        text: 'SELECT username FROM users LIMIT $2 OFFSET (($1 - 1) * $2);', // Replace "users" with your actual table name
+        values: [page, size]
       };
       const result = await pool.query(query);
+      // console.log(result)
   
       // Return the result as a JSON response
       res.json(result.rows);
